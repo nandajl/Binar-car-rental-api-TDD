@@ -13,9 +13,8 @@
     "rules": {
         "quotes":"off",
         "no-unused-vars":"error",
-        "semi":"error",
         "indent":"error",
-        "no-extra-semi":"off",
+        "no-extra-semi":"warn",
         "jest/no-disabled-tests": "warn",
         "jest/no-focused-tests": "error",
         "jest/no-identical-title": "error",
