@@ -1,5 +1,11 @@
 const ApplicationController = require("./ApplicationController")
-const { EmailNotRegisteredError, InsufficientAccessError, RecordNotFoundError, WrongPasswordError } = require("../errors")
+const {
+  EmailNotRegisteredError,
+  InsufficientAccessError,
+  RecordNotFoundError,
+  WrongPasswordError,
+  EmailAlreadyTakenError
+} = require("../errors")
 const { JWT_SIGNATURE_KEY } = require("../../config/application")
 
 class AuthenticationController extends ApplicationController {
@@ -25,66 +31,66 @@ class AuthenticationController extends ApplicationController {
   authorize = (rolename) => {
     return (req, res, next) => {
       try {
-        const token = req.headers.authorization?.split("Bearer ")[1]
-        const payload = this.decodeToken(token)
+        const token = req.headers.authorization?.split('Bearer ')[1];
+        const payload = this.decodeToken(token);
 
         if (!!rolename && rolename != payload.role.name) {
-          throw new InsufficientAccessError(payload?.role?.name)
+          throw new InsufficientAccessError(payload?.role?.name);
         }
 
-        req.user = payload
-        next()
+        req.user = payload;
+        next();
       } catch (err) {
         res.status(401).json({
           error: {
             name: err.name,
             message: err.message,
-            details: err.details || null
-          }
-        })
-      }
-    }
-  }
+            details: err.details || null,
+          },
+        });
+      };
+    };
+  };
 
   handleLogin = async (req, res, next) => {
     try {
-      const email = req.body.email.toLowerCase()
-      const password = req.body.password
+      const email = req.body.email.toLowerCase();
+      const password = req.body.password;
       const user = await this.userModel.findOne({
         where: { email },
-        include: [{ model: this.roleModel, attributes: ["id", "name"] }]
-      })
+        include: [{ model: this.roleModel, attributes: ["id", "name"] }],
+      });
 
       if (!user) {
-        const err = new EmailNotRegisteredError(email)
-        res.status(404).json(err)
-        return
+        const err = new EmailNotRegisteredError(email);
+        res.status(404).json(err);
+        return;
       }
 
-      const isPasswordCorrect = this.verifyPassword(password, user.encryptedPassword)
+      const isPasswordCorrect = this.verifyPassword(password, user.encryptedPassword);
 
       if (!isPasswordCorrect) {
-        const err = new WrongPasswordError()
-        res.status(401).json(err)
-        return
+        const err = new WrongPasswordError();
+        res.status(401).json(err);
+        return;
       }
 
-      const accessToken = this.createTokenFromUser(user, user.Role)
+      const accessToken = this.createTokenFromUser(user, user.Role);
 
       res.status(201).json({
-        accessToken
-      })
+        accessToken,
+      });
     } catch (err) {
-      next(err)
+      next(err);
     }
-  }
+  };
 
   handleRegister = async (req, res, next) => {
     try {
       const name = req.body.name
       const email = req.body.email.toLowerCase()
       const password = req.body.password
-      let existingUser = await this.userModel.findOne({ where: { email } })
+      const existingUser = await this.userModel.findOne({ where: { email } })
 
       if (!!existingUser) {
         const err = new EmailAlreadyTakenError(email)
@@ -101,7 +107,7 @@ class AuthenticationController extends ApplicationController {
         email,
         encryptedPassword: this.encryptPassword(password),
         roleId: role.id
-      }) 
+      })
 
       const accessToken = this.createTokenFromUser(user, role)
 
@@ -119,15 +125,15 @@ class AuthenticationController extends ApplicationController {
     const user = await this.userModel.findByPk(req.user.id)
 
     if (!user) {
-      const err = new RecordNotFoundError(this.userModel.name)
+      const err = new RecordNotFoundError(req.user.name)
       res.status(404).json(err)
       return
     }
 
-    const role = await this.roleModel.findByPk(user.roleId) 
+    const role = await this.roleModel.findByPk(user.roleId)
 
     if (!role) {
-      const err = new RecordNotFoundError(this.roleModel.name)
+      const err = new RecordNotFoundError(req.user.name)
       res.status(404).json(err)
       return
     }
@@ -148,7 +154,7 @@ class AuthenticationController extends ApplicationController {
     }, JWT_SIGNATURE_KEY)
   }
 
-  decodeToken(token) {
+  decodeToken (token) {
     return this.jwt.verify(token, JWT_SIGNATURE_KEY)
   }
 

@@ -56,12 +56,16 @@ describe("ApplicationController", () => {
         method: "get",
         url: "abc.com"
       }
-      const err = new NotFoundError(mockRequest.method, mockRequest.url)
+      const err = new Error({
+        name: "error",
+        message: "error bro",
+        details: "this err"
+      })
       const mockResponse = {
         status: jest.fn().mockReturnThis(),
         json: jest.fn().mockReturnThis()
       }
-      const next = {}
+      const next = jest.fn()
 
       const applicationController = new ApplicationController()
       applicationController.handleError(err, mockRequest, mockResponse, next)
@@ -70,7 +74,7 @@ describe("ApplicationController", () => {
         error: {
           name: err.name,
           message: err.message,
-          details: err.details
+          details: err.details || null
         }
       })
     })

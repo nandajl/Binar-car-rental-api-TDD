@@ -3,6 +3,8 @@ const EmailNotRegisteredError = require("./EmailNotRegisteredError")
 const InsufficientAccessError = require("./InsufficientAccessError");
 const NotFoundError = require("./NotFoundError")
 const WrongPasswordError = require("./WrongPasswordError")
+const RecordNotFoundError = require("./RecordNotFoundError")
+const EmailAlreadyTakenError = require("./EmailAlreadyTakenError")
 
 module.exports = {
   CarAlreadyRentedError,
@@ -10,4 +12,6 @@ module.exports = {
   InsufficientAccessError,
   NotFoundError,
   WrongPasswordError,
+  RecordNotFoundError,
+  EmailAlreadyTakenError
 }

@@ -1,5 +1,8 @@
 const { Op } = require("sequelize");
 const ApplicationController = require("./ApplicationController");
+const {
+  CarAlreadyRentedError
+} = require('../errors')
 
 class CarController extends ApplicationController {
   constructor({ carModel, userCarModel, dayjs }) {
@@ -10,8 +13,6 @@ class CarController extends ApplicationController {
   }
 
   handleListCars = async (req, res) => {
-    const offset = this.getOffsetFromRequest(req);
-    const limit = req.query.pageSize;
     const query = this.getListQueryFromRequest(req);
     const cars = await this.carModel.findAll(query);
     const carCount = await this.carModel.count({ where: query.where, include: query.include, });
@@ -75,14 +76,14 @@ class CarController extends ApplicationController {
             [Op.gte]: rentStartedAt,
           },
           rentEndedAt: {
-            [Op.lte]: rentEndedAt, 
-          }
-        }
+            [Op.lte]: rentEndedAt,
+          },
+        },
       });
 
       if (!!activeRent) {
         const err = new CarAlreadyRentedError(car);
-        res.status(422).json(err)
+        res.status(422).json(err);
         return;
       }
 
@@ -112,15 +113,16 @@ class CarController extends ApplicationController {
 
       const car = this.getCarFromRequest(req);
 
-      await car.update({
+      await this.carModel.update({
         name,
         price,
         size,
         image,
         isCurrentlyRented: false,
-      });
+      }, { where: { id: car.id } });
 
-      res.status(200).json(car);
+      const updatedCar = await this.getCarFromRequest(req);
+      res.status(200).json(updatedCar);
     }
 
     catch(err) {
@@ -134,7 +136,7 @@ class CarController extends ApplicationController {
   }
 
   handleDeleteCar = async (req, res) => {
-    const car = await this.carModel.destroy(req.params.id); 
+    const car = await this.carModel.destroy(req.params.id);
     res.status(204).end();
   }
 
